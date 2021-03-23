@@ -1,0 +1,46 @@
+---
+output: 
+  md_document:
+    variant: markdown_github
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "README-"
+)
+```
+
+# snipR
+
+snipR implements the blocked sorted neighbors algorithm for discovering potential duplicate pairs. The analysis is broken down into a series of steps:
+
+* Initialize Neighbors object
+
+* Perform BSN and collect possible duplicate pairs
+
+* Score duplicate pairs and retain those above specified threshold
+
+* Export, repeat, or verify accuracy of algorithm
+
+## Installation
+
+You can install bsnR from github with:
+
+```{r gh-installation, eval = FALSE}
+# install.packages("devtools")
+devtools::install_github("mPloenzke/snipR")
+```
+
+If you encounter a bug, please file a minimal reproducible example on [github](https://github.com/mPloenzke/snipR/issues). 
+
+## Learning snipR
+
+To get started, please read the intro vignette: `vignette("Introduction", package = "snipR")`. 
+
+## Key data structures
+
+The base S3 object in bsnR is a _Neighbors_, a contained for the raw data and user specified keys. At each step of the analysis this object will be promoted, allowing subsequent steps to be performed. 

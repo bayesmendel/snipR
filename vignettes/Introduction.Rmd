@@ -1,0 +1,422 @@
+x---
+title: "snipR Workflow"
+author: "Matthew Ploenzke"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{bsnR Workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+This vignette is intended to showcase the typical workflow for creating and manipulating the objects created in the package.
+
+```{r}
+library(snipR)
+library(tidyverse)
+source('R/simulateFamily.R') # helper functions for simulation pedigrees.
+```
+
+## Dataset 
+
+You may also simulate your own duplicated pedigrees. See sample code below for formatting. The BayesMendel package is a dependency for this and you will need to source the script from the R folder.
+
+```{r, eval=FALSE}
+# create a simulation dataset with duplicates and miscodings
+library(BayesMendel)
+pedigrees <- makeSimDataset(nFams=500,pDup=.05,singleP=0,stdP=.95,
+                     parents=1,gparents=1,sibs=.9,ants=.8,cuz=.25,errRt=1.5,
+                     numUnique=8,birthrt=c(3,2))
+row.names(pedigrees) <- NULL
+pedigrees <- pedigrees[,1:(ncol(pedigrees)-2)]
+pedigrees <- pedigrees[,-ncol(pedigrees)]
+```
+
+The pedigrees dataset simulated above includes records for simulated family pedigrees. 
+
+```{r dataset}
+data('pedigrees')
+```
+
+Inject duplicates.
+
+```{r}
+proportion_to_inject <- 0.1
+nInjections <- proportion_to_inject*nrow(pedigrees)
+ids.to.sample.from <- unique(pedigrees$requestId)
+ids_to_inject <- sample(ids.to.sample.from, nInjections, replace=TRUE)
+
+pedigrees <- pedigrees %>% mutate(Injectiontype = case_when(requestId %in% ids_to_inject ~ 'original', TRUE ~ 'none'))
+
+pedigrees.to.save <- pedigrees %>% filter(Injectiontype == 'none') %>% mutate(nInjectedErrors = 0)
+pedigrees.to.inject <- pedigrees %>% filter(Injectiontype == 'original')
+pedigrees.injected <- tibble()
+for (ii in unique(pedigrees.to.inject$requestId)) {
+  tfam <- pedigrees.to.inject %>% filter(requestId == ii)
+  tfam2 <- simulateErrors(tfam, errRt=.05)
+  errs <- tfam2[[2]]
+  tfam2 <- tfam2[[1]] %>% mutate(Injectiontype = 'injected')
+  pedigrees.injected <- bind_rows(tfam, tfam2) %>%
+    mutate(nInjectedErrors = errs) %>% 
+    bind_rows(pedigrees.injected)
+}
+
+pedigrees <- pedigrees.to.save %>% 
+  bind_rows(pedigrees.injected) %>% 
+  as_tibble() %>% 
+  arrange(requestId) %>%
+  unite(requestId, requestId, Injectiontype) %>% 
+  mutate(myBlockingVar = 'test') %>% 
+  group_by(requestId) %>%
+  mutate(famSize = n()) %>%
+  ungroup()
+```
+
+Split into family-member type.
+
+```{r}
+self <- pedigrees %>%
+  filter(ID==1) %>% 
+  as.data.frame()
+mothers <- pedigrees %>% 
+  group_by(requestId) %>%
+  arrange(ID, .by_group=TRUE) %>%
+  filter(ID==MotherID[1]) %>%
+  ungroup %>% as.data.frame()
+fathers <- pedigrees %>% 
+  group_by(requestId) %>%
+  arrange(ID, .by_group=TRUE) %>%
+  filter(ID==FatherID[1]) %>%
+  ungroup %>% as.data.frame()
+mothersmothers <- pedigrees %>% 
+  group_by(requestId) %>%
+  arrange(ID, .by_group=TRUE) %>% 
+  mutate(tempID = MotherID[1]) %>% 
+  filter(n()>1) %>%
+  filter(ID == MotherID[ID==tempID]) %>% 
+  ungroup %>% as.data.frame()
+mothersfathers <- pedigrees %>% 
+  group_by(requestId) %>%
+  arrange(ID, .by_group=TRUE) %>% 
+  mutate(tempID = MotherID[1]) %>% 
+  filter(n()>1) %>%
+  filter(ID == FatherID[ID==tempID]) %>% 
+  ungroup %>% as.data.frame()
+fathersmothers <- pedigrees %>% 
+  group_by(requestId) %>%
+  arrange(ID, .by_group=TRUE) %>% 
+  mutate(tempID = FatherID[1]) %>% 
+  filter(n()>1) %>%
+  filter(ID == MotherID[ID==tempID]) %>% 
+  ungroup %>% as.data.frame()
+fathersfathers <- pedigrees %>% 
+  group_by(requestId) %>%
+  arrange(ID, .by_group=TRUE) %>% 
+  mutate(tempID = FatherID[1]) %>% 
+  filter(n()>1) %>%
+  filter(ID == FatherID[ID==tempID]) %>% 
+  ungroup %>% as.data.frame()
+```
+
+## Set key variables
+
+Define the key variables below for the sorted neighbors. These should correspond to columns in the dataset under consideration for which we eventually wish to include in the duplicate pair match scoring.
+```{r keyVars}
+# variables to be used in generating the sort keys
+binary.v <- c("Gender","AffectedBreast","AffectedOvary","AffectedColon","AffectedEndometrium","AffectedPancreas","AffectedSkin","Twins","BRCA1","BRCA2","MLH1","MSH2","MSH6","P16")
+cont.v <- c("AgeBreast","AgeOvary","AgeColon","AgeEndometrium","AgePancreas","AgeSkin", 'famSize')
+vars <- c(binary.v,cont.v, "senderIP")
+```
+
+## Initialize a Neighbors object
+
+snipR is dependent upon various S3 classes, the first of which is the Neighbors class. Below we initialize an object of this class by providing the raw data, a character input defining which column to be used as the ID variable, and the previously defined key variables.
+```{r Neighbors}
+# generate object of Neighbors class
+selfs.neighbsObj <- Neighbors(self, ID="requestId",keyVars=vars)
+summary(selfs.neighbsObj)
+# repeat for all family members
+mothers.neighbsObj <- Neighbors(mothers, ID="requestId",keyVars=vars)
+fathers.neighbsObj <- Neighbors(fathers, ID="requestId",keyVars=vars)
+mothersmothers.neighbsObj <- Neighbors(mothersmothers, ID="requestId",keyVars=vars)
+mothersfathers.neighbsObj <- Neighbors(mothersfathers, ID="requestId",keyVars=vars)
+fathersmothers.neighbsObj <- Neighbors(fathersmothers, ID="requestId",keyVars=vars)
+fathersfathers.neighbsObj <- Neighbors(fathersfathers, ID="requestId",keyVars=vars)
+```
+
+
+## Perform SN
+We may now perform an iteration of the sorted neighbors algorithm. The input must be a Neighbors object created in the previous step. The algorithm partitions the IDs based on the blocking variable provided and then repeats sorted neighbors iterations, each time collecting those neighbors within the specified sorted neighbors window. This creates a Blocks object, which is essentially a Neighbors object which now contains information about the BSN call.
+
+```{r Blocks}
+# perform an iteration of algorithm, specifying the number of repetitions and window size
+selfs.blocksObj <- blockedSN(selfs.neighbsObj, blockVar='myBlockingVar', repSN=1, windowSN=2)
+summary(selfs.blocksObj)
+# repeat for all family members
+mothers.blocksObj <- blockedSN(mothers.neighbsObj, blockVar='myBlockingVar', repSN=1, windowSN=2)
+fathers.blocksObj <- blockedSN(fathers.neighbsObj, blockVar='myBlockingVar', repSN=1, windowSN=2)
+mothersmothers.blocksObj <- blockedSN(mothersmothers.neighbsObj, blockVar='myBlockingVar', repSN=1, windowSN=2)
+mothersfathers.blocksObj <- blockedSN(mothersfathers.neighbsObj, blockVar='myBlockingVar', repSN=1, windowSN=2)
+fathersmothers.blocksObj <- blockedSN(fathersmothers.neighbsObj, blockVar='myBlockingVar', repSN=1, windowSN=2)
+fathersfathers.blocksObj <- blockedSN(fathersfathers.neighbsObj, blockVar='myBlockingVar', repSN=1, windowSN=2)
+```
+
+It is simple to perform another call of the algorithm and append the new neighbors.
+
+```{r reBlock,eval=FALSE}
+# and perform another
+selfs.blocksObj <- blockedSN(selfs.blocksObj, blockVar='senderIP', repSN=10, windowSN=1)
+summary(selfs.blocksObj)
+```
+
+We may also see the sort keys used on the various calls.
+
+```{r sortKeys}
+print(selfs.blocksObj$keysUsed)
+```
+
+## Generating background
+Background neighbors are potential duplicate pairs found by randomly choosing two neighbors from the list of all IDs. In theory, the BSN algorithm should outperform these background pairs due to the nature of the algorithm. Here we find an equal number of background neighbors as we currently have from the previous BSN calls.
+
+```{r sampleBG,eval=FALSE}
+# randomly generate potential pairs to compare to
+## num>1 -> count, num<=1 -> proportion of current neighbors found via BSN
+selfs.blocksObj <- sampleBackground(selfs.blocksObj, num=1)
+```
+
+We may leverage the pedigree information by intersecting the found pairs across defined family member types (father, mother, etc.).
+
+```{r}
+self.pairs <- cbind(selfs.blocksObj$Neighbors,member="self")
+mothers.pairs <- cbind(mothers.blocksObj$Neighbors,member="mothers")
+fathers.pairs <- cbind(fathers.blocksObj$Neighbors,member="fathers")
+mothersmothers.pairs <- cbind(mothersmothers.blocksObj$Neighbors,member="mothersmothers")
+mothersfathers.pairs <- cbind(mothersfathers.blocksObj$Neighbors,member="mothersfathers")
+fathersmothers.pairs <- cbind(fathersmothers.blocksObj$Neighbors,member="fathersmothers")
+fathersfathers.pairs <- cbind(fathersfathers.blocksObj$Neighbors,member="fathersfathers")
+all.pairs <- rbind(self.pairs,mothers.pairs,fathers.pairs,mothersmothers.pairs,
+                   mothersfathers.pairs,fathersmothers.pairs,fathersfathers.pairs)
+unique.pairs <- as_tibble(all.pairs) %>% 
+  group_by(ID1, ID2) %>%
+  mutate(found=n()) %>%
+  filter(row_number()==1) %>% 
+  select(ID1,ID2,background, found) %>%
+  ungroup() %>% 
+  mutate(found = found/max(found)) %>%
+  as.data.frame()
+
+blocksObj <- selfs.blocksObj
+blocksObj$Neighbors <- as.matrix(unique.pairs)
+```
+
+## Scoring neighbors
+We now promote the Blocks object to a Scores object by scoring each pair of records. That is to say each pair of neighbors found previously are scored based on the key variables and their associated weights. The scoring is based on simple matching: string variables and binary variables are scored 0/1 for non-match/match and continuous (numeric) variables are scored based on a simple distance with an maximum value of 1 for match and 1/(abs(difference)+1) for non-matches. 
+
+```{r Scores}
+# get match score (not incorporating pedigree structure)
+scoresObj <- scoreNeighbors(blocksObj, method='intersection')
+summary(scoresObj)
+```
+
+Distributions may also be visualized by calling plot on the Scores object.
+
+```{r plotScores, eval=FALSE}
+plot(scoresObj, type="box")
+plot(scoresObj, type="density")
+```
+
+Now we're going to take the scores object and fit a mixture model to it and obtain posterior probabilities of being a duplicate pair. This will replace the match score value. Start with some function definitions based on those by David Robinson at \url{http://varianceexplained.org/r/mixture-models-baseball/}.
+```{r}
+fit_beta_mle <- function(x) {
+  ll <- function(alpha, beta) {
+      -sum(dbeta(x, alpha, beta, log = TRUE))
+  }
+  m <- stats4::mle(ll, start = list(alpha = 10, beta = 1), method = "L-BFGS-B",lower = c(0.001, .001))
+  ab <- stats4::coef(m)
+  data_frame(alpha = ab[1], beta = ab[2], number = length(x))
+}
+
+iterate_em <- function(state, ...) {
+  fits <- state$assignments %>%
+    group_by(cluster) %>%
+    do(mutate(fit_beta_mle(.$matchScore), number = nrow(.))) %>%
+    ungroup() %>%
+    mutate(prior = number / sum(number))
+
+  assignments <- state$assignments %>%
+    select(ID1:matchScore) %>%
+    crossing(fits) %>%
+    mutate(likelihood = prior * dbeta(matchScore, alpha, beta)) %>%
+    group_by(ID1, injected1, ID2, injected2, background) %>%
+    top_n(1, likelihood) %>%
+    ungroup()
+  
+  list(assignments = assignments,
+       fits = fits)
+}
+```
+
+Make initial assignments.
+```{r}
+scores_tibble <- scoresObj$Neighbors %>%
+  as_tibble() %>%
+  separate(ID1,into=c('ID1','injected1'),sep='_') %>%
+  separate(ID2,into=c('ID2','injected2'),sep='_') %>%
+  mutate(matchScore = as.numeric(matchScore)) %>%
+  mutate(matchScore = case_when(matchScore == 1 ~ .999,
+                                  matchScore == 0 ~ .001, 
+                                  TRUE ~ matchScore)) %>%
+  #mutate(cluster = as.logical(rbinom(n=n(),size=1,prob=matchScore))) %>% 
+  #mutate(cluster = case_when(cluster ~ 'A', TRUE ~ 'B')) 
+  mutate(cluster = case_when(matchScore >= quantile(matchScore, probs=(1-proportion_to_inject)) ~ 'A', TRUE ~ 'B'))
+```
+
+Histogram of scores by cluster.
+```{r}
+scores_tibble %>% 
+  mutate(isDup = ID1==ID2) %>%
+  ggplot(aes(matchScore, fill=cluster)) + 
+  geom_histogram() + 
+  facet_grid(rows=vars(isDup))
+```
+
+Run EM.
+```{R}
+set.seed(1337)
+library(purrr)
+iterations <- accumulate(1, iterate_em, .init = list(assignments = scores_tibble))
+```
+
+Plot parameters across iterations.
+```{r}
+fit_iterations <- iterations %>%
+  map_df("fits", .id = "iteration")
+
+fit_iterations %>%
+  crossing(x = seq(.01, 1, .01)) %>%
+  mutate(density = prior * dbeta(x, alpha, beta)) %>%
+  ggplot(aes(x, density, color = iteration, group = iteration)) +
+  geom_line() +
+  facet_wrap(~ cluster)
+```
+
+Grab final parameters.
+```{r}
+final_parameters <- fit_iterations %>% 
+  mutate(iteration = as.numeric(iteration)) %>%
+  filter(iteration==max(iteration))
+```
+
+Calculate final posterior likelihood.
+```{r}
+scores_likelihoods <- scores_tibble %>%
+  select(-cluster) %>%
+  crossing(final_parameters) %>%
+  mutate(likelihood = prior * dbeta(matchScore, alpha, beta)) %>%
+  group_by(ID1, injected1, ID2, injected2, background) %>%
+  mutate(posterior = likelihood / sum(likelihood))
+
+scores_assignments <- scores_likelihoods %>%
+  top_n(1, posterior) %>%
+  ungroup()
+```
+
+Assign new posterior probabilities to Scores object.
+```{r}
+duplicate_cluster <- scores_assignments %>%
+  distinct(cluster, alpha, beta) %>%
+  mutate(mean = alpha/(alpha+beta)) %>%
+  mutate(maxmean = max(mean)) %>%
+  filter(mean==maxmean) %>% 
+  pull(cluster)
+
+scoresObj$Neighbors <- scores_assignments %>%
+  unite(ID1,ID1,injected1,sep='_') %>%
+  unite(ID2,ID2,injected2,sep='_') %>% 
+  mutate(matchScore = case_when(cluster==duplicate_cluster ~ posterior, 
+                                    TRUE ~ 1-posterior)) %>%
+  select(ID1, ID2, background, matchScore, cluster) %>%
+  right_join(as_tibble(scoresObj$Neighbors) %>% select(-matchScore,-found), by=c('ID1','ID2','background')) %>%
+  as.matrix()
+```
+
+## Deduplication
+We are now ready to define a threshold and see how the BSN algorithm has performed. The threshold input is a proportion such that only those candidate duplicate pedigrees above the percentile are defined as true duplicate pairs. In the deDuplicate call below pedigrees will be assigned to duplicate entities; these entities are comprised of all families passing the threshold and completing the associative set (e.g. if family A and family B are candidate pairs passing the threshold, as are families A and C, then the duplicate entity consists of families A, B, C). The priority input defines how to sort these families within the entity. The function call returns a Duplicates object. The above scoring procedures are useful when the variables exhibit sufficient variability; in our dataset, however, the pedigrees are relatively homogeneous and thus the scoring procedure does not provide significant gains. For this reason we set a very low threshold (0.01).
+
+```{r Duplicates, eval=FALSE}
+# deduplicate on arbitrary threshold
+orderon <- list(VAR="AgeBreast", DESC=TRUE)
+duplicatesObj <- deDuplicate(scoresObj, thresh=duplicate_cluster, priority=orderon)
+summary(duplicatesObj)
+```
+
+We may again plot these to see how the scores above the threshold defined as duplicate pairs compare to those below.
+
+```{r plotDuplicates}
+plot(duplicatesObj, type="density")
+plot(duplicatesObj, type="box")
+plot(duplicatesObj, type="family counts")
+```
+
+## Output formatting
+The Duplicates object from above is not so useful for data analysis. Thus it is now time to transform it back to a useable list reflecting the analysis and duplicate ordering defined previously. Note if the user wishes to remove any pedigrees from an duplicate entity, they may do so by simply removing that row from the entity held in the Duplicates dupsList slot.
+
+```{r CleanIt, eval=FALSE}
+# format back to a list
+cleanList <- reformatDuplicates(duplicatesObj)
+```
+
+## The big reveal
+Should labels exist we may now check our accuracy. 
+
+```{r RevealIt, eval=FALSE}
+# reveal accuracy if labels exist
+selfs.deduped <- revealTruth(duplicatesObj)
+```
+
+```{r}
+tdat1 <- scoresObj$rawData %>%
+  as_tibble() %>% 
+  select(FamilyID, requestId) %>%
+  rename(FamilyID1 = FamilyID, ID1=requestId) 
+tdat2 <- scoresObj$rawData %>%
+  as_tibble() %>% 
+  select(FamilyID, requestId) %>%
+  rename(FamilyID2 = FamilyID, ID2=requestId) 
+
+dupps <- scoresObj$Neighbors %>% 
+  as_tibble() %>%
+  left_join(tdat1, by='ID1') %>%
+  left_join(tdat2, by='ID2') %>% 
+  separate(ID1, into=c('ID1','Type1')) %>%
+  separate(ID2, into=c('ID2','Type2')) %>%
+  bind_rows(notfound) %>%
+  mutate(DuplicateType = case_when(ID1 == ID2 & cluster==duplicate_cluster ~ 'Called Injection',
+                                   FamilyID1 == FamilyID2 & cluster==duplicate_cluster ~ 'Called Duplicate',
+                                   ID1 == ID2 & cluster!=duplicate_cluster ~ 'Missed Injection',
+                                   FamilyID1 == FamilyID2 & cluster!=duplicate_cluster ~ 'Missed Duplicate',
+                                   cluster==duplicate_cluster ~ 'False Positive',
+                                   cluster!=duplicate_cluster ~ 'True Negative'))
+
+library(caret)
+possible.comparisons <- nrow(self)*(nrow(self)-1)/2
+true_negatives_to_add <- possible.comparisons - nrow(dupps)
+tdat <- dupps %>%
+  select(DuplicateType) %>%
+  bind_rows(tibble(DuplicateType = rep('True Negative',true_negatives_to_add))) %>%
+  mutate(pred = case_when(DuplicateType %in% c('Called Injection','Called Duplicate','False Positive') ~ 1,
+                          TRUE ~ 0),
+         ref = case_when(DuplicateType %in% c('Called Injection','Called Duplicate','Missed Injection', 'Missed Duplicate') ~ 1,
+                         TRUE ~ 0),
+         pred = as.factor(pred),
+         ref=as.factor(ref))
+
+confs <- confusionMatrix(data=tdat$pred, reference=tdat$ref)$byClass %>% as.data.frame() %>% t()
+
+track <- dupps %>% 
+  filter(DuplicateType %in% c('Called Duplicate','Missed Duplicate')) %>%
+  select(ID1, Type1, ID2, Type2, DuplicateType) %>%
+  mutate(val = 1) %>%
+  spread(DuplicateType, val,fill = 0) 
+```
+

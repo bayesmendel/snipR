@@ -1,0 +1,23 @@
+Package: snipR
+Type: Package
+Title: What the Package Does (Title Case)
+Version: 0.1.0
+Authors@R: person("Matthew", "Ploenzke", email = "ploenzke@g.harvard.edu",
+                  role = c("aut", "cre"))
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1
+Imports: caret,
+    sm,
+    stats,
+    graphics,
+    e1071,
+    igraph,
+    clevr
+Suggests: knitr,
+    rmarkdown
+VignetteBuilder: knitr
+Depends: R(>= 2.10.0)
