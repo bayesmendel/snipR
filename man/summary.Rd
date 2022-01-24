@@ -5,7 +5,7 @@
 \alias{summary.Blocks}
 \alias{summary.Scores}
 \alias{summary.Duplicates}
-\title{Summarize Neighbors object generic.}
+\title{Summarize object generic.}
 \usage{
 \method{summary}{Neighbors}(object, ...)
 
@@ -16,7 +16,7 @@
 \method{summary}{Duplicates}(object, ...)
 }
 \arguments{
-\item{object}{\code{\link{Neighbors}} oject to be summarized.}
+\item{object}{object to be summarized.}
 
 \item{...}{other arguments to be passed.}
 }

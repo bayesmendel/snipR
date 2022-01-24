@@ -18,7 +18,7 @@
 #' class \code{POSIXlt} used in the \code{base::strptime} function.
 #' @param requestID Column that has the ID for the family.
 #' @return An object of class \code{\link{Duplicates}} containing the duplicate entities
-#' and representatives for each duplicate entity (including singletons without duplicates)..
+#' and representatives for each duplicate entity (including singletons without duplicates).
 #'
 #' @export
 deDuplicate <- function(object, thresh, priority, isProband,

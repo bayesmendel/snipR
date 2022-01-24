@@ -5,7 +5,7 @@
 \alias{set.Neighbors}
 \alias{set.Blocks}
 \alias{set.Scores}
-\title{Set Neighbors attribute generic.}
+\title{Set attribute generic.}
 \usage{
 set(object, attr, val)
 
@@ -27,5 +27,5 @@ set(object, attr, val)
 object of same class (\code{\link{Neighbors}}, \code{\link{Blocks}}, etc.).
 }
 \description{
-\code{set} sets the attribute for the \code{\link{Neighbors}} object.
+\code{set} sets the attribute for the object.
 }

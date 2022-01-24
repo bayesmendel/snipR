@@ -1,8 +1,8 @@
-#' Summarize Neighbors object generic.
+#' Summarize object generic.
 #'
 #' \code{summary} summarizes the contents of the object.
 #'
-#' @param object \code{\link{Neighbors}} oject to be summarized.
+#' @param object object to be summarized.
 #' @param ... other arguments to be passed.
 #' @rdname summary
 #' @export 

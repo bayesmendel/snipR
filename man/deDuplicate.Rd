@@ -35,7 +35,7 @@ class \code{POSIXlt} used in the \code{base::strptime} function.}
 }
 \value{
 An object of class \code{\link{Duplicates}} containing the duplicate entities
-and representatives for each duplicate entity (including singletons without duplicates)..
+and representatives for each duplicate entity (including singletons without duplicates).
 }
 \description{
 Outputs the \code{\link{Duplicates}} object, providing the duplicate entities and

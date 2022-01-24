@@ -1,9 +1,9 @@
 #' Blocked sorted neighbors generic.
 #'
 #' \code{blockedSN} returns a \code{\link{Blocks}} object created from a single
-#' iteration of the blocked sorted neighbors algorithm.
+#' iteration of the SNIP algorithm.
 #'
-#' @param object \code{\link{Neighbors}} or \code{\link{Blocks}} object to perform BSN algorithm on.
+#' @param object \code{\link{Neighbors}} or \code{\link{Blocks}} object to perform SNIP algorithm on.
 #' @return An object of class \code{\link{Blocks}} containing the neighbors found
 #' and keys used during the blocked sorted neighbors iteration. 
 #'

@@ -1,12 +1,11 @@
 #' Calculate match score generic.
 #'
 #' \code{scoreNeighbors} returns a \code{\link{Scores}} object with the \code{Neighbors}
-#' slot populated with a match score for each potential duplicate found from the BSN algorithm.
-#' A match score is calculated by averaging the number of string/binary variable matches
-#' consistent between the two records plus a similarity measure for the continuous variables.
+#' slot populated with a match score for each potential duplicate found from the SNIP algorithm.
 #'
-#' @param method Character value.  If intersection, then uses the normalized count of times the match was found. Else uses variable scoring.
-#' @param object object containing pre-computed Neighbors from the BSN algorithm.
+#' @param method Character value.  If "intersection", then uses the count of times the match was found.
+#' If "greedy", then uses the greedy match score.
+#' @param object object containing pre-computed Neighbors from the SNIP algorithm.
 #' @return An object of class \code{\link{Scores}} containing the scored neighbor pairs.
 #'
 #' @export
@@ -22,7 +21,8 @@ scoreNeighbors.default <- function(object, method='intersection') {
     return(NULL)
 }
 
-#' @param method Character value.  If intersection, then uses the normalized count of times the match was found. Else uses variable scoring.
+#' @param method Character value.  If intersection, then uses the normalized count of times the match was found.
+#' If "greedy", then uses the greedy match score.
 #' @rdname scoreNeighbors
 #' @export
 scoreNeighbors.Blocks <- function(object, method='intersection') {
@@ -59,7 +59,8 @@ scoreNeighbors.Blocks <- function(object, method='intersection') {
     }
 }
 
-#' @param method Character value.  If intersection, then uses the normalized count of times the match was found. Else uses variable scoring.
+#' @param method Character value.  If intersection, then uses the count of times the match was found.
+#' If "greedy", then uses the greedy match score.
 #' @rdname scoreNeighbors
 #' @export
 scoreNeighbors.Scores <- function(object, method='intersection') {

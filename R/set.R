@@ -1,6 +1,6 @@
-#' Set Neighbors attribute generic.
+#' Set attribute generic.
 #'
-#' \code{set} sets the attribute for the \code{\link{Neighbors}} object.
+#' \code{set} sets the attribute for the object.
 #'
 #' @param object object to be updated.
 #' @param attr Character input. The attribute to update (e.g. 'rawData', 'ID') 

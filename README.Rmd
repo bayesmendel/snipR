@@ -16,26 +16,18 @@ knitr::opts_chunk$set(
 
 # snipR
 
-snipR implements the blocked sorted neighbors algorithm for discovering potential duplicate pairs. The analysis is broken down into a series of steps:
-
-* Initialize Neighbors object
-
-* Perform BSN and collect possible duplicate pairs
-
-* Score duplicate pairs and retain those above specified threshold
-
-* Export, repeat, or verify accuracy of algorithm
+snipR implements the Sorted NeIghborhoods for Pedigrees (SNIP) algorithm for deduplicating pedigree data.
 
 ## Installation
 
-You can install bsnR from github with:
+You can install snipR from github with:
 
 ```{r gh-installation, eval = FALSE}
 # install.packages("devtools")
-devtools::install_github("mPloenzke/snipR")
+devtools::install_github("bayesmendel/snipR")
 ```
 
-If you encounter a bug, please file a minimal reproducible example on [github](https://github.com/mPloenzke/snipR/issues). 
+If you encounter a bug, please file a minimal reproducible example on [github](https://github.com/bayesmendel/snipR/issues). 
 
 ## Learning snipR
 

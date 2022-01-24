@@ -2,8 +2,8 @@
 #'
 #' Stores the input data and parameters for calling \code{blockedSN}.
 #'
-#' @param dat Input data matrix used in the BSN algorithm.
-#' @param ID Character or numeric value. Identifing column in dat.
+#' @param dat Input data matrix used in the SNIP algorithm.
+#' @param ID Character or numeric value. Identifying column in dat.
 #' This is the ID variable for which \code{Neighbors} will reference.
 #' @param keyVars Character or numeric vector. Which variables to
 #' include when generating sort keys?

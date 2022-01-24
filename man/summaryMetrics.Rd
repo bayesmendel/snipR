@@ -11,7 +11,8 @@ summaryMetrics(
   thresh.i = NULL,
   thresh.g = NULL,
   fs = function(x, y) 1,
-  fm = function(x, y) 1
+  fm = function(x, y) 1,
+  skip = TRUE
 )
 }
 \arguments{
@@ -30,6 +31,9 @@ Use \code{NULL} if the greedy scoring method was not used.}
 \item{fs}{Cost function for splitting for the GMD metric}
 
 \item{fm}{Cost function for splitting for the GMD metric}
+
+\item{skip}{If TRUE, then we do not evaluate metrics for thresholds where
+the resulting number of clusters is less than half the true number of clusters.}
 }
 \value{
 A data frme consisting of the performance metrics for each threshold.
@@ -40,7 +44,10 @@ Evaluates performance metrics on the deduplicated data.
 \details{
 Outputs 7 metrics: pairwise precision, pairwise recall, pairwise
 F1, cluster precision, cluster recall, cluster F1, and generalized merge distance
-(GMD). See Menestrina et al. (2010) for details.
+(GMD). See Menestrina et al. (2010) for details. The skip argument is set to
+TRUE by default since if the number of clusters is so low, then calculating the
+performance measures will be computationally intensive, and the performance measures
+will be poor.
 }
 \references{
 Menestrina, D., Whang, S. E., & Garcia-Molina, H. (2010).

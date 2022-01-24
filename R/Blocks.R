@@ -2,7 +2,7 @@
 #'
 #' Stores the neighbors and parameters from calling \code{blockedSN}.
 #'
-#' @param NeighborsObj \code{\link{Neighbors}} object to perform BSN.
+#' @param NeighborsObj \code{\link{Neighbors}} object to perform SNIP.
 #' @param Neighbors Data frame with rows as potential matches and
 #' columns for potential match pair IDs. Sorted.
 #' @param keysUsed List containing blocking variables and sort keys

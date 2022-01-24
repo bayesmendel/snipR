@@ -19,7 +19,7 @@ blockedSN(object, blockVar, repSN, windowSN, keyLength)
 \method{blockedSN}{Scores}(object, blockVar, repSN, windowSN, keyLength)
 }
 \arguments{
-\item{object}{\code{\link{Neighbors}} or \code{\link{Blocks}} object to perform BSN algorithm on.}
+\item{object}{\code{\link{Neighbors}} or \code{\link{Blocks}} object to perform SNIP algorithm on.}
 
 \item{blockVar}{Character value.  Blocking variable.}
 
@@ -35,5 +35,5 @@ and keys used during the blocked sorted neighbors iteration.
 }
 \description{
 \code{blockedSN} returns a \code{\link{Blocks}} object created from a single
-iteration of the blocked sorted neighbors algorithm.
+iteration of the SNIP algorithm.
 }

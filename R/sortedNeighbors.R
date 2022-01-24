@@ -5,7 +5,7 @@
 #'
 #' @param dat Data frame. Data used for sorting and discovering neighbors.
 #' @param key Integer or character vector. The columns on which to construct the sort key.
-#' @param windowSN Integer value. Size of sliding window to use during sorted neighbrs.
+#' @param windowSN Integer value. Size of sliding window to use during sorted neighbors.
 #' @param ID Integer or character value. Identifiable column in dat.
 #' @return A data frame with 2 columns and n rows, each row containing neighbor pairs.
 #'

@@ -3,51 +3,51 @@
 \docType{data}
 \name{pedigrees}
 \alias{pedigrees}
-\title{Simulated family pedigrees.}
+\title{Simulated family pedigrees}
 \format{
-An object of class \code{'cross'}; see \code{\link[qtl]{read.cross}}.
-
-A data frame with 1033 rows and 29 variables:
+A data frame with 207,214 rows and 32 variables:
 \describe{
-  \item{ID}{Family member ID (self=1)}
-  \item{Gender}{Reported gender}
-  \item{FatherID}{ID for reported father}
+  \item{ID}{ID for the family member}
+  \item{Sex}{1 for males, 0 for females}
   \item{MotherID}{ID for reported mother}
-  \item{AffectedBreast}{Breast cancer affliction status (binary)}
-  \item{AgeBreast}{Age at onset or current age if AffectedBreast=0}
-  \item{Twins}{Does individual have a twin?}
-  \item{BRCA1}{BRCA1 gene status}
-  \item{Duplicate}{Is pedigree duplicated?}
-  \item{nDuplicates}{Number of duplicate pedigrees present}
-  \item{FamilyID}{Pedigree unique identifier (typically unknown)}
-  \item{requestID}{Pedigree ID (unmatched identifier)}
-  \item{senderIP}{Simulated IP address used}
-  ...
+  \item{FatherID}{ID for reported father}
+  \item{isProband}{1 for proband, 0 otherwise}
+  \item{isAff*}{Cancer status (BC = breast cancer, OC = ovarian cancer,
+  COL = colorectal cancer, ENDO = endometrial cancer, PANC = pancreatic cancer,
+  MELA = melanoma)}
+  \item{Age*}{Cancer age (BC = breast cancer, OC = ovarian cancer,
+  COL = colorectal cancer, ENDO = endometrial cancer, PANC = pancreatic cancer,
+  MELA = melanoma)}
+  \item{isDead}{Death status}
+  \item{BRCA1}{BRCA1 testing results (1 = positive, 2 = negative, 0 = untested)}
+  \item{BRCA2}{BRCA2 testing results (1 = positive, 2 = negative, 0 = untested)}
+  \item{MLH1}{MLH1 testing results (1 = positive, 2 = negative, 0 = untested)}
+  \item{MSH2}{MSH2 testing results (1 = positive, 2 = negative, 0 = untested)}
+  \item{MSH6}{MSH6 testing results (1 = positive, 2 = negative, 0 = untested)}
+  \item{CDKN2A}{CDKN2A testing results (1 = positive, 2 = negative, 0 = untested)}
+  \item{Twins}{Twin marker (twins in the family will have the same positive integer)}
+  \item{FamID}{True ID for the family}
+  \item{RequestID}{Reported ID for the family (true duplicates will have a different
+  RequestID but the same FamID)}
+  \item{Duplicate}{1 if the pedigree has a duplicate}
+  \item{nDuplicates}{Number of duplicate pedigrees of the family}
+  \item{relationship}{Relationship to proband}
+  \item{famSize}{Number of family members in the family}
 }
-}
-\source{
-\url{http://bcb.dfci.harvard.edu/bayesmendel/software.php/}
 }
 \usage{
-data(pedigrees)
+pedigrees
 }
 \description{
-A dataset containing (possibly duplicated) family pedigrees, 
-with each family consisting of a reported 'self' individual
-and various cancer risk indicators/status, as well as a 
-pseudo-random collection of reported family members
-and their associated indicators. Allele sharing between generations
-follow basic Mendelian inheritance with parameters provided by
-BayesMendel.
+A data set containing family pedigrees, in which some families have duplicates.
+The data represent pedigrees that are ascertained based on family history, and
+include information on cancer statuses and ages, genetic testing results, etc.
+Each family has a FamID; duplicate families will have the same FamID. 
+Each family has a unique RequestID. Hence, the goal of the algorithm is to
+detect the duplicates, or the families with the same FamID. Within a family,
+each individual has an ID, and the MotherID and FatherID represent the ID of
+the mother and father, respectively. A portion of the data set is provided below.
+The data is mostly in the format for running the Mendelian model
+PanelPRO (https://projects.iq.harvard.edu/bayesmendel/panelpro).
 }
-\examples{
-data(pedigrees)
-self <- pedigrees[pedigrees$ID==1,]
-\donttest{hist(self$nDuplicates,
-   breaks=seq(0,max(sself$nDuplicates),by=1),
-   main='Distribution of Duplications',xlab='Duplicate Count',
-   ylab='Frequency',right=FALSE)}
-}
-\keyword{data}
 \keyword{datasets}
-\keyword{pedigrees}

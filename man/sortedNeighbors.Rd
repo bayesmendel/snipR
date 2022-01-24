@@ -11,7 +11,7 @@ sortedNeighbors(dat, key, windowSN, ID)
 
 \item{key}{Integer or character vector. The columns on which to construct the sort key.}
 
-\item{windowSN}{Integer value. Size of sliding window to use during sorted neighbrs.}
+\item{windowSN}{Integer value. Size of sliding window to use during sorted neighbors.}
 
 \item{ID}{Integer or character value. Identifiable column in dat.}
 }

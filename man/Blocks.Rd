@@ -7,7 +7,7 @@
 Blocks(NeighborsObj, Neighbors, keysUsed)
 }
 \arguments{
-\item{NeighborsObj}{\code{\link{Neighbors}} object to perform BSN.}
+\item{NeighborsObj}{\code{\link{Neighbors}} object to perform SNIP.}
 
 \item{Neighbors}{Data frame with rows as potential matches and
 columns for potential match pair IDs. Sorted.}

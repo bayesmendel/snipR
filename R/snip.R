@@ -1,4 +1,4 @@
-#' Run entire deduplication algorithm
+#' Run entire SNIP deduplication algorithm
 #'
 #' @param pedigrees Pedigree data to deduplicate.
 #' @param requestID Column that has the ID for the family.
@@ -41,7 +41,7 @@
 #'
 #' @export
 
-bsn <- function(pedigrees, requestID, isProband, keyVars,
+snip <- function(pedigrees, requestID, isProband, keyVars,
                 keyVars.male = NULL, keyVars.female = NULL,
                 keyWt = NULL, blockVar = NULL, repSN = 1, windowSN = 10,
                 keyLength = length(keyVars), method = "intersection",

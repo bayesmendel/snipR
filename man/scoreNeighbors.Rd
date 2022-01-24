@@ -16,16 +16,15 @@ scoreNeighbors(object, method = "intersection")
 \method{scoreNeighbors}{Scores}(object, method = "intersection")
 }
 \arguments{
-\item{object}{object containing pre-computed Neighbors from the BSN algorithm.}
+\item{object}{object containing pre-computed Neighbors from the SNIP algorithm.}
 
-\item{method}{Character value.  If intersection, then uses the normalized count of times the match was found. Else uses variable scoring.}
+\item{method}{Character value.  If intersection, then uses the count of times the match was found.
+If "greedy", then uses the greedy match score.}
 }
 \value{
 An object of class \code{\link{Scores}} containing the scored neighbor pairs.
 }
 \description{
 \code{scoreNeighbors} returns a \code{\link{Scores}} object with the \code{Neighbors}
-slot populated with a match score for each potential duplicate found from the BSN algorithm.
-A match score is calculated by averaging the number of string/binary variable matches
-consistent between the two records plus a similarity measure for the continuous variables.
+slot populated with a match score for each potential duplicate found from the SNIP algorithm.
 }

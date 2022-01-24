@@ -30,11 +30,10 @@ gmd <- function(R, S, fs, fm){
     totalRecs <- 0
     for(j in 1:nrow(pMap)){
       # add cost to split the j-th cluster of R in pMap
-      size.Rj <- length(which(M$Cluster == pMap$Cluster[j]))
-      if(size.Rj > pMap$Count[j]){
+      if(R.sizes[pMap$Cluster[j]] > pMap$Count[j]){
         SiCost <- SiCost + fs(pMap$Count[j], size.Rj - pMap$Count[j])
       }
-      size.Rj <- size.Rj - pMap$Count[j]
+      R.sizes[pMap$Cluster[j]] <- R.sizes[pMap$Cluster[j]] - pMap$Count[j]
       if(totalRecs != 0){
         # cost to merge into i-th cluster of S
         SiCost <- SiCost + fm(pMap$Count[j], totalRecs)
@@ -135,10 +134,15 @@ clusterF1 <- function(R, S, prec = NULL, rec = NULL){
 #' Use \code{NULL} if the greedy scoring method was not used.
 #' @param fs Cost function for splitting for the GMD metric
 #' @param fm Cost function for splitting for the GMD metric
+#' @param skip If TRUE, then we do not evaluate metrics for thresholds where
+#' the resulting number of clusters is less than half the true number of clusters.
 #' @return A data frme consisting of the performance metrics for each threshold.
 #' @details Outputs 7 metrics: pairwise precision, pairwise recall, pairwise
 #' F1, cluster precision, cluster recall, cluster F1, and generalized merge distance
-#' (GMD). See Menestrina et al. (2010) for details.
+#' (GMD). See Menestrina et al. (2010) for details. The skip argument is set to
+#' TRUE by default since if the number of clusters is so low, then calculating the
+#' performance measures will be computationally intensive, and the performance measures
+#' will be poor.
 #' 
 #' @references Menestrina, D., Whang, S. E., & Garcia-Molina, H. (2010).
 #' Evaluating entity resolution results. Proceedings of the VLDB Endowment, 3(1-2), 208-219.
@@ -147,7 +151,8 @@ clusterF1 <- function(R, S, prec = NULL, rec = NULL){
 summaryMetrics <- function(object, requestID, famID,
                            thresh.i = NULL, thresh.g = NULL,
                            fs = function(x, y) 1,
-                           fm = function(x, y) 1){
+                           fm = function(x, y) 1,
+                           skip = TRUE){
   
   # true clustering of the families
   S <- as.list(unique(object$rawData[, eval(famID)]))
@@ -169,52 +174,62 @@ summaryMetrics <- function(object, requestID, famID,
   
   if(!is.null(thresh.i)){
     for(i in 1:length(thresh.i)){
-      R <- object$dupsList$intersection[[paste0("thresh_", thresh.i[i])]]
-      if(length(R) / length(S) > 0.5){
-        metrics$pairPrecision[metrics$threshType == "intersection" &
-                                metrics$threshold == thresh.i[i]] <- pairPrecision(R, S)
-        metrics$pairRecall[metrics$threshType == "intersection" &
-                             metrics$threshold == thresh.i[i]] <- pairRecall(R, S)
-        metrics$pairF1[metrics$threshType == "intersection" & 
-                         metrics$threshold == thresh.i[i]] <- pairF1(R, S)
-        metrics$clusterPrecision[metrics$threshType == "intersection" &
-                                   metrics$threshold == thresh.i[i]] <- clusterPrecision(R, S)
-        metrics$clusterRecall[metrics$threshType == "intersection" &
-                                metrics$threshold == thresh.i[i]] <- clusterRecall(R, S)
-        metrics$clusterF1[metrics$threshType == "intersection" &
-                            metrics$threshold == thresh.i[i]] <- clusterF1(R, S,
-                                                                           prec = metrics$clusterPrecision[metrics$threshType == "intersection" &
-                                                                                                             metrics$threshold == thresh.i[i]],
-                                                                           rec = metrics$clusterRecall[metrics$threshType == "intersection" &
-                                                                                                         metrics$threshold == thresh.i[i]])
-        metrics$GMD[metrics$threshType == "intersection" &
-                      metrics$threshold == thresh.i[i]] <- gmd(R, S, fs, fm)
+      if(!is.null(thresh.g)){
+        R <- object$dupsList$intersection[[paste0("thresh_", thresh.i[i])]]
+      } else{
+        R <- object$dupsList[[paste0("thresh_", thresh.i[i])]]
       }
+      if(skip == TRUE){
+        if(length(R) / length(S) < 0.5) next
+      }
+      metrics$pairPrecision[metrics$threshType == "intersection" &
+                              metrics$threshold == thresh.i[i]] <- pairPrecision(R, S)
+      metrics$pairRecall[metrics$threshType == "intersection" &
+                           metrics$threshold == thresh.i[i]] <- pairRecall(R, S)
+      metrics$pairF1[metrics$threshType == "intersection" & 
+                       metrics$threshold == thresh.i[i]] <- pairF1(R, S)
+      metrics$clusterPrecision[metrics$threshType == "intersection" &
+                                 metrics$threshold == thresh.i[i]] <- clusterPrecision(R, S)
+      metrics$clusterRecall[metrics$threshType == "intersection" &
+                              metrics$threshold == thresh.i[i]] <- clusterRecall(R, S)
+      metrics$clusterF1[metrics$threshType == "intersection" &
+                          metrics$threshold == thresh.i[i]] <- clusterF1(R, S,
+                                                                         prec = metrics$clusterPrecision[metrics$threshType == "intersection" &
+                                                                                                           metrics$threshold == thresh.i[i]],
+                                                                         rec = metrics$clusterRecall[metrics$threshType == "intersection" &
+                                                                                                       metrics$threshold == thresh.i[i]])
+      metrics$GMD[metrics$threshType == "intersection" &
+                    metrics$threshold == thresh.i[i]] <- gmd(R, S, fs, fm)
     }
   }
   if(!is.null(thresh.g)){
     for(i in 1:length(thresh.g)){
-      R <- object$dupsList$greedy[[paste0("thresh_", thresh.g[i])]]
-      if(length(R) / length(S) > 1){
-        metrics$pairPrecision[metrics$threshType == "greedy" &
-                                metrics$threshold == thresh.g[i]] <- pairPrecision(R, S)
-        metrics$pairRecall[metrics$threshType == "greedy" &
-                             metrics$threshold == thresh.g[i]] <- pairRecall(R, S)
-        metrics$pairF1[metrics$threshType == "greedy" &
-                         metrics$threshold == thresh.g[i]] <- pairF1(R, S)
-        metrics$clusterPrecision[metrics$threshType == "greedy" &
-                                   metrics$threshold == thresh.g[i]] <- clusterPrecision(R, S)
-        metrics$clusterRecall[metrics$threshType == "greedy" &
-                                metrics$threshold == thresh.g[i]] <- clusterRecall(R, S)
-        metrics$clusterF1[metrics$threshType == "greedy" &
-                            metrics$threshold == thresh.g[i]] <- clusterF1(R, S,
-                                                                           prec = metrics$clusterPrecision[metrics$threshType == "greedy" &
-                                                                                                             metrics$threshold == thresh.g[i]],
-                                                                           rec = metrics$clusterRecall[metrics$threshType == "greedy" &
-                                                                                                         metrics$threshold == thresh.g[i]])
-        metrics$GMD[metrics$threshType == "greedy" &
-                      metrics$threshold == thresh.g[i]] <- gmd(R, S, fs, fm)
+      if(!is.null(thresh.i)){
+        R <- object$dupsList$greedy[[paste0("thresh_", thresh.i[i])]]
+      } else{
+        R <- object$dupsList[[paste0("thresh_", thresh.i[i])]]
       }
+      if(skip == TRUE){
+        if(length(R) / length(S) < 0.5) next
+      }
+      metrics$pairPrecision[metrics$threshType == "greedy" &
+                              metrics$threshold == thresh.g[i]] <- pairPrecision(R, S)
+      metrics$pairRecall[metrics$threshType == "greedy" &
+                           metrics$threshold == thresh.g[i]] <- pairRecall(R, S)
+      metrics$pairF1[metrics$threshType == "greedy" &
+                       metrics$threshold == thresh.g[i]] <- pairF1(R, S)
+      metrics$clusterPrecision[metrics$threshType == "greedy" &
+                                 metrics$threshold == thresh.g[i]] <- clusterPrecision(R, S)
+      metrics$clusterRecall[metrics$threshType == "greedy" &
+                              metrics$threshold == thresh.g[i]] <- clusterRecall(R, S)
+      metrics$clusterF1[metrics$threshType == "greedy" &
+                          metrics$threshold == thresh.g[i]] <- clusterF1(R, S,
+                                                                         prec = metrics$clusterPrecision[metrics$threshType == "greedy" &
+                                                                                                           metrics$threshold == thresh.g[i]],
+                                                                         rec = metrics$clusterRecall[metrics$threshType == "greedy" &
+                                                                                                       metrics$threshold == thresh.g[i]])
+      metrics$GMD[metrics$threshType == "greedy" &
+                    metrics$threshold == thresh.g[i]] <- gmd(R, S, fs, fm)
     }
   }
   return(metrics)
