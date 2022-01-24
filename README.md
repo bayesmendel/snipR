@@ -7,7 +7,7 @@ for deduplicating pedigree data.
 
 ## Installation
 
-You can install snipR from github with:
+You can install snipR from GitHub with:
 
 ``` r
 # install.packages("devtools")
@@ -21,9 +21,3 @@ If you encounter a bug, please file a minimal reproducible example on
 
 To get started, please read the intro vignette:
 `vignette("Introduction", package = "snipR")`.
-
-## Key data structures
-
-The base S3 object in bsnR is a *Neighbors*, a contained for the raw
-data and user specified keys. At each step of the analysis this object
-will be promoted, allowing subsequent steps to be performed.

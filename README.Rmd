@@ -20,7 +20,7 @@ snipR implements the Sorted NeIghborhoods for Pedigrees (SNIP) algorithm for ded
 
 ## Installation
 
-You can install snipR from github with:
+You can install snipR from GitHub with:
 
 ```{r gh-installation, eval = FALSE}
 # install.packages("devtools")
@@ -31,8 +31,4 @@ If you encounter a bug, please file a minimal reproducible example on [github](h
 
 ## Learning snipR
 
-To get started, please read the intro vignette: `vignette("Introduction", package = "snipR")`. 
-
-## Key data structures
-
-The base S3 object in bsnR is a _Neighbors_, a contained for the raw data and user specified keys. At each step of the analysis this object will be promoted, allowing subsequent steps to be performed. 
+To get started, please read the intro vignette: `vignette("Introduction", package = "snipR")`.
